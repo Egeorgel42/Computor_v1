@@ -1,152 +1,128 @@
 #include "computor.hpp"
 
-static void parseSign(std::string str, uint &step, uint &step_mem, bool &ispositive)
+const char      *Term::EmptyValue::what() const throw() {return "0";};
+
+static long checkOverflow(long a, long b)
 {
-	if (step_mem == Sign)
-	{
-		if (str == "+")
-			ispositive = true;
-		else if (str == "-")
-			ispositive = false;
-		else
-			step_mem = Multiplicator;
-		step = Multiplicator;
-	}
-	else if (str == "-" || str == "+")
-		throw std::runtime_error("Unexpected Sign/Operator: " + str);
-	if (step_mem == Multiplication)
-	{
-		if (str != "*")
-			throw std::runtime_error("Expected Sign/Operator: *");
-		step = X;
-	}
-	else if (str == "*")
-		throw std::runtime_error("Unexpected Sign/Operator: *");
+	long c = a + b;
+	if ((a > 0) == (b > 0) && (c > 0) != (a > 0))
+		throw std::runtime_error("Long Overflow");
+	return c;
 }
 
-static void parseX(std::string str, uint &step, uint &step_mem, int &exponent)
+static bool convetionalSignParsing(std::string str, uint &step, uint &current_step, uint expected_step, uint following_step, std::string expected_character, bool expected, bool exception)
 {
-	std::regex x1 = std::regex(R"([xX]\^\d+)");
-	std::regex x2 = std::regex(R"([xX])");
-	if (step_mem == X && std::regex_match(str, x1))
+	if (current_step == expected_step)
 	{
-		str.erase(0,2);
-		try {
-			exponent = std::stol(str);
+		if (expected_character.find(str) != std::string::npos)
+		{
+			step = following_step;
+			return true;
 		}
-		catch(std::out_of_range &e){
-			throw std::runtime_error("Long Overflow");
-		}
-		step = End;
+		else if (expected)
+			throw std::runtime_error("Expected Sign/Operator/Character(s): " + expected_character + ", Instead: " + str);
 	}
-	else if (step_mem == X && std::regex_match(str, x2))
-	{
-		exponent = 1;
-		step = End;
-	}
-	else if (step_mem != X && (std::regex_match(str,x1) || std::regex_match(str,x2)))
-		throw std::runtime_error("Unexpected X");
-	if (exponent > 2)
-		throw std::runtime_error("Exponent of X needs to be between 0 and 2");
+	else if (!exception && expected_character.find(str) != std::string::npos)
+		throw std::runtime_error("Unexpected Sign/Operator/Character: " + str);
+	return false;
 }
 
-static void	parseMultiplicator(std::string str, uint &step, uint &step_mem, long &multiple, int &exponent)
+static void parseSign(std::string str, uint &step, uint &current_step, bool &ispositive, long &multiple)
+{
+	convetionalSignParsing(str, step, current_step, Sign, Multiplicator, "+", false, false);
+	ispositive = ispositive == !convetionalSignParsing(str, step, current_step, Sign, Multiplicator, "-", false, false);
+	if (current_step == Sign && step == Sign)
+		step = current_step = Multiplicator;
+	if (convetionalSignParsing(str, step, current_step, Multiplicator, X, "xX", false, true))
+	{
+		multiple = 1;
+		step = current_step = X;
+	}
+	if (convetionalSignParsing(str, step, current_step, Multiplication, X, "xX", false, true))
+		step = current_step = X;
+	convetionalSignParsing(str, step, current_step, Multiplication, X, "*", false, false);
+	convetionalSignParsing(str, step, current_step, X, Power, "xX", true, false);
+	convetionalSignParsing(str, step, current_step, Power, Exponent, "^", true, false);
+}
+
+static void	parseNbr(std::string str, uint &step, uint &current_step, long &nbr, uint expected_step, uint following_step)
 {
 	std::regex multiplicator = std::regex(R"(\d+)");
-	std::regex specialCase = std::regex(R"((\d+[xX]|\d+[xX]\^\d+))");
-	std::regex x = std::regex(R"(([xX]|[xX]\^\d+))");
-	if (step_mem == Multiplicator && std::regex_match(str, x))
-	{
-		step = X;
-		step_mem = X;
-		multiple = 1;
-	}
-	else if (step_mem == Multiplicator && std::regex_match(str, specialCase))
-	{
-		size_t pos = 0;
-		try {
-			multiple = std::stol(str, &pos);
-		}
-		catch(std::out_of_range &e){
-			throw std::runtime_error("Long Overflow");
-		}
-		step = X;
-		step_mem = X;
-		parseX(str.substr(pos, SIZE_MAX), step, step_mem, exponent);
-		step = End;
-	}
-	else if (step_mem == Multiplicator && std::regex_match(str, multiplicator))
+	if (current_step == expected_step && std::regex_match(str, multiplicator))
 	{
 		try {
-			multiple = std::stol(str);
+			nbr = std::stol(str);
 		}
 		catch (std::out_of_range &e) {
 			throw std::runtime_error("Long Overflow");
 		}
-		step = Multiplication;
+		step = following_step;
 	}
-	else if (step_mem == Multiplicator)
-		throw std::runtime_error("Unexpected Expression");
+	else if (current_step == expected_step)
+		throw std::runtime_error("Expected Numerical Expression, Instead: " + str);
 }
 
-void	Term::ParseAndAdd(std::string val)
+void	Term::ParseAndAdd(std::string val, bool ispositive)
 {
-	bool ispositive = true;
-	int exponent = -1;
+	uint step = Sign;
+	uint current_step;
+	long exponent = -1;
 	long multiple = -1;
-	std::regex split = std::regex(R"(\s+)");
-	std::smatch match;
+	std::regex split = std::regex(R"([\+\-\*\^Xx]|[^\+\*\-\^Xx\s]+)");
 	std::regex unexpectedCharacter = std::regex(R"(([xX\-\+\^\*]|[0-9])*)");
-	std::regex_token_iterator<std::string::iterator> it(val.begin(), val.end(), split, -1);
+	std::regex_token_iterator<std::string::iterator> it(val.begin(), val.end(), split);
 	std::regex_token_iterator<std::string::iterator> end;
+
 	if (it == end)
 		throw std::runtime_error("Empty value");
-	uint step = Sign;
-	uint step_mem;
 	for (; it != end; it++)
 	{
-		std::cout << "\"" << *it << "\"" << std::endl;
-		step_mem = step;
+		current_step = step;
 		if (step == End)
 			throw std::runtime_error("Unexpected Expression");
-		std::string str = *it;
-		parseSign(str, step, step_mem, ispositive);
-		parseMultiplicator(str, step, step_mem, multiple, exponent);
-		if (step != End)
-			parseX(str, step, step_mem, exponent);
-		if (!std::regex_match(str, unexpectedCharacter))
-			throw std::runtime_error("Unexpected Character");
-		if (step_mem == step)
+		if (!std::regex_match((std::string)*it, unexpectedCharacter))
+			throw std::runtime_error("Unexpected Character, Expressions must only contain (0-9,x,X,-,+,*,^)");
+		parseSign(*it, step, current_step, ispositive, multiple);
+		parseNbr(*it, step, current_step, multiple, Multiplicator, Multiplication);
+		parseNbr(*it, step, current_step, exponent, Exponent, End);
+		if (current_step == step)
 			throw std::runtime_error("Unexpected Expression");
 	}
-	if (step == X)
-	{
-		step = End;
-		multiple = 1;
-	}
-	if (step == Multiplication)
-	{
-		step = End;
+
+	if (exponent > 2)
+		throw std::runtime_error("Exponent must be between 0 and 2");
+	if (current_step == Multiplicator)
 		exponent = 0;
-	}
-	std::cout << "end\n multiple: " << multiple << "\n ispositive: " << ispositive << "\n exponent: " << exponent << "\n step: " << step << std::endl;
-	if (step != End || exponent == -1 || multiple == -1)
+	else if (current_step == X)
+		exponent = 1;
+	else if (step != End || exponent == -1 || multiple == -1)
 		throw std::runtime_error("Unexpected Expression");
+
+	if (exponent == 0 && multiple == 0)
+		throw Term::EmptyValue();
 	if (!ispositive)
 		multiple = multiple * -1;
 	if (_exponent == -1)
 		_exponent = exponent;
 	else if (_exponent != exponent)
 		throw std::runtime_error("error: unexpected Term addtition");
-	_value += multiple;
+	_value = checkOverflow(_value, multiple);
 }
 
-Term::Term(std::string newTerm)
+Term::Term(std::string newTerm, bool ispositive)
 {
-	ParseAndAdd(newTerm);
+	ParseAndAdd(newTerm, ispositive);
 }
 
 Term::~Term(){}
+
+Term	&Term::operator+=(const Term& rhs)
+{
+	if (_exponent != rhs._exponent)
+		throw std::runtime_error("error: unexpected Term addition");
+	_value = checkOverflow(_value, rhs._value);
+	return *this;
+}
 
 int	Term::getExponent()
 {

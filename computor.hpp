@@ -2,9 +2,10 @@
 # define COMPUTOR_HPP
 # include <iostream>
 # include <regex>
+# include <algorithm>
 # include "Term.hpp"
 
 void	help(void);
-void	run(char **argv);
+void	run(std::string str);
 
 #endif

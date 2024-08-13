@@ -1,14 +1,16 @@
 #ifndef TERM_HPP
 # define TERM_HPP
 # include <string>
+# include <vector>
 
 class Term
 {
 	public:
-		Term(std::string newTerm);
+		Term(std::string newTerm, bool ispositive);
 		~Term();
-		void	ParseAndAdd(std::string val);
-		void	AddParsed(int exponent, long multiple);
+		class	EmptyValue : public std::exception {const char *what() const throw();};
+		void	ParseAndAdd(std::string val, bool ispositive);
+		Term	&operator+=(const Term& rhs);
 		int		getExponent();
 		long	getValue();
 	private:
@@ -24,6 +26,8 @@ enum	Steps
 	Multiplicator,
 	Multiplication,
 	X,
+	Power,
+	Exponent,
 	End
 };
 
