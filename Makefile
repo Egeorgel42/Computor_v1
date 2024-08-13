@@ -1,7 +1,6 @@
 CC = c++
 SRC = help.cpp \
 main.cpp \
-parser.cpp \
 run.cpp \
 Term.cpp
 
