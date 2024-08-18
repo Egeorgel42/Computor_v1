@@ -6,23 +6,24 @@ void	parse(std::string str, std::vector<Term> &expressions)
 	std::regex split = std::regex(R"((\=|[\-\+]?[^\=\-\+]*))");
 	std::regex_token_iterator<std::string::iterator> it(str.begin(), str.end(), split);
 	std::regex_token_iterator<std::string::iterator> end;
-	std::regex_token_iterator<std::string::iterator> buff;
 
 	if (it == end)
 		throw std::runtime_error("Empty value");
 	if (*it == "=")
 		throw std::runtime_error("Empty value before \"=\" Sign");
-	for (; it != end; it++)
+	for (;it != end; it++)
 	{
 		std::string strbuf = *it;
-		if (strbuf.size() == 0)
-			continue;
 		if (strbuf == "=" && !ispositive)
 			throw std::runtime_error("Unexpected second \"=\" Sign");
 		else if (strbuf == "=")
 		{
+			std::regex_token_iterator<std::string::iterator> next;
 			ispositive = false;
-			buff = it;
+			next = it;
+			std::string nextstr = *(++next);
+			if(nextstr.size() == 0)
+				throw std::runtime_error("Empty value after \"=\" Sign");
 			continue;
 		}
 		try{
@@ -31,9 +32,7 @@ void	parse(std::string str, std::vector<Term> &expressions)
 		}
 		catch(Term::EmptyValue &e) {}
 	}
-	if (buff == it)
-		throw std::runtime_error("Empty value after \"=\" Sign");
-	else if (ispositive)
+	if (ispositive)
 		throw std::runtime_error("No \"=\" Sign found");
 }
 
@@ -52,12 +51,20 @@ void	add(std::vector<Term> &expressions, bool *bx)
 		}
 		else
 		{
-			*(x[exponent]) += *it;
-			it = expressions.erase(it);
+			try{
+				*(x[exponent]) += *it;
+				it = expressions.erase(it);
+			}
+			catch (Term::EmptyValue &e)
+			{
+				bx[exponent] = false;
+				it = expressions.erase(x[exponent]);
+				it = expressions.erase(it);
+			}
 		}
 	}
 	if (!bx[0] && !bx[1] && !bx[2])
-		throw std::runtime_error("No expressions given");
+		throw std::runtime_error("Equation cannot result in \"0 = 0\"");
 	if (!bx[1] && !bx[2])
 		throw std::runtime_error("At least 1 X is expected");
 	std::sort(expressions.begin(), expressions.end(), [] (Term &a, Term &b) {return a.getExponent() < b.getExponent();});

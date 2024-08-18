@@ -74,7 +74,7 @@ void	Term::ParseAndAdd(std::string val, bool ispositive)
 	std::regex_token_iterator<std::string::iterator> end;
 
 	if (it == end)
-		throw std::runtime_error("Empty value");
+		throw EmptyValue();
 	for (; it != end; it++)
 	{
 		current_step = step;
@@ -99,7 +99,7 @@ void	Term::ParseAndAdd(std::string val, bool ispositive)
 		throw std::runtime_error("Unexpected Expression");
 
 	if (exponent == 0 && multiple == 0)
-		throw Term::EmptyValue();
+		throw EmptyValue();
 	if (!ispositive)
 		multiple = multiple * -1;
 	if (_exponent == -1)
@@ -121,6 +121,8 @@ Term	&Term::operator+=(const Term& rhs)
 	if (_exponent != rhs._exponent)
 		throw std::runtime_error("error: unexpected Term addition");
 	_value = checkOverflow(_value, rhs._value);
+	if (_value == 0)
+		throw EmptyValue();
 	return *this;
 }
 
