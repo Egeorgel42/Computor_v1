@@ -126,12 +126,35 @@ Term	&Term::operator+=(const Term& rhs)
 	return *this;
 }
 
-int	Term::getExponent()
+
+std::ostream &operator<<(std::ostream& out, const Term& expression)
+{
+	if (expression.getValue() != 1 && expression.getValue() > 0)
+		out << expression.getValue();
+	else if (expression.getValue() != -1 && expression.getValue() < 0)
+		out << expression.getValue() * -1;
+	if (expression.getExponent() == 1)
+		out << "X ";
+	else if (expression.getExponent() == 2)
+		out << "X^2 ";
+	else if (expression.getValue() == 1 || expression.getValue() == -1)
+		out << "1 ";
+	else
+		out << " ";
+	return out;
+}
+
+void	Term::reverseValue()
+{
+	_value = _value * - 1;
+}
+
+int	Term::getExponent() const
 {
 	return _exponent;
 }
 
-long	Term::getValue()
+long	Term::getValue() const
 {
 	return _value;
 }

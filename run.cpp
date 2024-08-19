@@ -36,8 +36,9 @@ void	parse(std::string str, std::vector<Term> &expressions)
 		throw std::runtime_error("No \"=\" Sign found");
 }
 
-void	add(std::vector<Term> &expressions, bool *bx)
+void	add(std::vector<Term> &expressions)
 {
+	bool bx[3] = {false, false, false};
 	std::vector<Term>::iterator x[3];
 
 	for (std::vector<Term>::iterator it = expressions.begin(); it != expressions.end();)
@@ -58,10 +59,16 @@ void	add(std::vector<Term> &expressions, bool *bx)
 			catch (Term::EmptyValue &e)
 			{
 				bx[exponent] = false;
-				it = expressions.erase(x[exponent]);
 				it = expressions.erase(it);
 			}
 		}
+	}
+	for (std::vector<Term>::iterator it = expressions.begin(); it != expressions.end();)
+	{
+		if (!bx[it->getExponent()])
+			it = expressions.erase(it);
+		else
+			it++;
 	}
 	if (!bx[0] && !bx[1] && !bx[2])
 		throw std::runtime_error("Equation cannot result in \"0 = 0\"");
@@ -70,25 +77,45 @@ void	add(std::vector<Term> &expressions, bool *bx)
 	std::sort(expressions.begin(), expressions.end(), [] (Term &a, Term &b) {return a.getExponent() < b.getExponent();});
 }
 
-void	print(std::vector<Term> &expressions, bool *bx)
+void	print(std::vector<Term> &expressions)
 {
-	int i = -1;
-	if (bx[0] && expressions[++i].getValue())
-		std::cout << " ( " << expressions[i].getValue() << " ) ";
-	if (bx[1] && expressions[++i].getValue())
-		std::cout << " ( " << expressions[i].getValue() << "X" << " ) ";
-	if (bx[2] && expressions[++i].getValue())
-		std::cout << " ( " << expressions[i].getValue() << "X^2" << " ) ";
-	std::cout << " = 0" << std::endl;
+	bool first = true;
+	for (long unsigned int i = 0; i < expressions.size(); i++)
+	{
+		if (expressions[i].getValue() > 0 && !first)
+			std::cout << "+ ";
+		else if (expressions[i].getValue() < 0 && first)
+			std::cout << "-";
+		else if (expressions[i].getValue() < 0)
+			std::cout << "- ";
+		std::cout << expressions[i];
+		first = false;
+	}
+	std::cout << "= 0" << std::endl;
+}
+
+void	revSigns(std::vector<Term> &expressions)
+{
+	int i = 0;
+	for (std::vector<Term>::iterator it = expressions.begin(); it != expressions.end(); it++)
+	{
+		if (it->getValue() > 0)
+			i++;
+		else
+			i--;
+	}
+	if (i >= 0)
+		return;
+	for (std::vector<Term>::iterator it = expressions.begin(); it != expressions.end(); it++)
+		it->reverseValue();
 }
 
 void	run(std::string str)
 {
 	std::vector<Term> expressions;
 
-	bool bx[3] = {false, false, false};
-
 	parse(str, expressions);
-	add(expressions, bx);
-	print(expressions, bx);
+	add(expressions);
+	revSigns(expressions);
+	print(expressions);
 }

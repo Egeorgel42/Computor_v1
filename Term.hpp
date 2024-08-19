@@ -11,14 +11,17 @@ class Term
 		class	EmptyValue : public std::exception {const char *what() const throw();};
 		void	ParseAndAdd(std::string val, bool ispositive);
 		Term	&operator+=(const Term& rhs);
-		int		getExponent();
-		long	getValue();
+		int		getExponent() const;
+		long	getValue() const;
+		void	reverseValue();
 	private:
 		int	_exponent = -1;
 		long	_value = 0;
 		Term();
 
 };
+
+std::ostream &operator<<(std::ostream& out, const Term& expression);
 
 enum	Steps
 {
