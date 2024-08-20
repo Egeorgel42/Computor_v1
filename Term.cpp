@@ -98,7 +98,7 @@ void	Term::ParseAndAdd(std::string val, bool ispositive)
 	else if (step != End || exponent == -1 || multiple == -1)
 		throw std::runtime_error("Unexpected Expression");
 
-	if (exponent == 0 && multiple == 0)
+	if (multiple == 0)
 		throw EmptyValue();
 	if (!ispositive)
 		multiple = multiple * -1;
