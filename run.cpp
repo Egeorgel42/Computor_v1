@@ -73,7 +73,7 @@ void	add(std::vector<Term> &expressions)
 	if (!bx[0] && !bx[1] && !bx[2])
 		throw std::runtime_error("Equation cannot result in \"0 = 0\"");
 	if (!bx[1] && !bx[2])
-		throw std::runtime_error("At least 1 X is expected");
+		throw std::runtime_error("At least 1 X is expected after simplifation of equation");
 	std::sort(expressions.begin(), expressions.end(), [] (Term &a, Term &b) {return a.getExponent() < b.getExponent();});
 }
 
@@ -118,4 +118,5 @@ void	run(std::string str)
 	add(expressions);
 	revSigns(expressions);
 	print(expressions);
+	calculateFirstDegree(expressions);
 }

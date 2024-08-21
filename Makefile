@@ -2,7 +2,8 @@ CC = c++
 SRC = help.cpp \
 main.cpp \
 run.cpp \
-Term.cpp
+Term.cpp \
+solveFirstDegree.cpp
 
 OBJ = ${SRC:.cpp=.o}
 CFLAGS = -Wall -Werror -Wextra -g #-fsanitize=address

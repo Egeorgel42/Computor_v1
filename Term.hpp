@@ -7,6 +7,7 @@ class Term
 {
 	public:
 		Term(std::string newTerm, bool ispositive);
+		Term(int exponent, long value);
 		~Term();
 		class	EmptyValue : public std::exception {const char *what() const throw();};
 		void	ParseAndAdd(std::string val, bool ispositive);

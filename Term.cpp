@@ -114,6 +114,9 @@ Term::Term(std::string newTerm, bool ispositive)
 	ParseAndAdd(newTerm, ispositive);
 }
 
+
+Term::Term(int exponent, long value) : _exponent(exponent), _value(value) {}
+
 Term::~Term(){}
 
 Term	&Term::operator+=(const Term& rhs)

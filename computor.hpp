@@ -7,5 +7,6 @@
 
 void	help(void);
 void	run(std::string str);
+void	calculateFirstDegree(std::vector<Term> &expressions);
 
 #endif
