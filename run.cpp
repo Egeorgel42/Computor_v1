@@ -118,5 +118,15 @@ void	run(std::string str)
 	add(expressions);
 	revSigns(expressions);
 	print(expressions);
-	calculateFirstDegree(expressions);
+	if (std::find_if(expressions.begin(), expressions.end(), [](Term e){return e.getExponent() == 1;}) != expressions.end() &&
+		std::find_if(expressions.begin(), expressions.end(), [](Term e){return e.getExponent() == 2;}) == expressions.end())
+	{
+		std::cout << "Polynomial degree: 1" << std::endl;
+		calculateFirstDegree(expressions);
+	}
+	else if (std::find_if(expressions.begin(), expressions.end(), [](Term e){return e.getExponent() == 2;}) != expressions.end())
+	{
+		std::cout << "Polynomial degree: 2" << std::endl;
+		calculateSecondDegree(expressions);
+	}
 }

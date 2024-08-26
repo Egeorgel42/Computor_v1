@@ -2,11 +2,11 @@
 
 const char      *Term::EmptyValue::what() const throw() {return "0";};
 
-static long checkOverflow(long a, long b)
+static int checkOverflow(int a, int b)
 {
-	long c = a + b;
+	int c = a + b;
 	if ((a > 0) == (b > 0) && (c > 0) != (a > 0))
-		throw std::runtime_error("Long Overflow");
+		throw std::runtime_error("int Overflow");
 	return c;
 }
 
@@ -27,7 +27,7 @@ static bool convetionalSignParsing(std::string str, uint &step, uint &current_st
 	return false;
 }
 
-static void parseSign(std::string str, uint &step, uint &current_step, bool &ispositive, long &multiple)
+static void parseSign(std::string str, uint &step, uint &current_step, bool &ispositive, int &multiple)
 {
 	convetionalSignParsing(str, step, current_step, Sign, Multiplicator, "+", false, false);
 	ispositive = ispositive == !convetionalSignParsing(str, step, current_step, Sign, Multiplicator, "-", false, false);
@@ -45,16 +45,16 @@ static void parseSign(std::string str, uint &step, uint &current_step, bool &isp
 	convetionalSignParsing(str, step, current_step, Power, Exponent, "^", true, false);
 }
 
-static void	parseNbr(std::string str, uint &step, uint &current_step, long &nbr, uint expected_step, uint following_step)
+static void	parseNbr(std::string str, uint &step, uint &current_step, int &nbr, uint expected_step, uint following_step)
 {
 	std::regex multiplicator = std::regex(R"(\d+)");
 	if (current_step == expected_step && std::regex_match(str, multiplicator))
 	{
 		try {
-			nbr = std::stol(str);
+			nbr = std::stoi(str);
 		}
 		catch (std::out_of_range &e) {
-			throw std::runtime_error("Long Overflow");
+			throw std::runtime_error("Int Overflow");
 		}
 		step = following_step;
 	}
@@ -66,8 +66,8 @@ void	Term::ParseAndAdd(std::string val, bool ispositive)
 {
 	uint step = Sign;
 	uint current_step;
-	long exponent = -1;
-	long multiple = -1;
+	int exponent = -1;
+	int multiple = -1;
 	std::regex split = std::regex(R"([\+\-\*\^Xx]|[^\+\*\-\^Xx\s]+)");
 	std::regex unexpectedCharacter = std::regex(R"(([xX\-\+\^\*]|[0-9])*)");
 	std::regex_token_iterator<std::string::iterator> it(val.begin(), val.end(), split);
@@ -90,7 +90,7 @@ void	Term::ParseAndAdd(std::string val, bool ispositive)
 	}
 
 	if (exponent > 2)
-		throw std::runtime_error("Exponent must be between 0 and 2");
+		throw std::runtime_error("The polynomial degree is strictly greater than 2, I can't solve");
 	if (current_step == Multiplicator)
 		exponent = 0;
 	else if (current_step == X)
@@ -115,7 +115,7 @@ Term::Term(std::string newTerm, bool ispositive)
 }
 
 
-Term::Term(int exponent, long value) : _exponent(exponent), _value(value) {}
+Term::Term(int exponent, int value) : _exponent(exponent), _value(value) {}
 
 Term::~Term(){}
 
@@ -157,7 +157,7 @@ int	Term::getExponent() const
 	return _exponent;
 }
 
-long	Term::getValue() const
+int	Term::getValue() const
 {
 	return _value;
 }
