@@ -8,17 +8,17 @@ class Term
 {
 	public:
 		Term(std::string newTerm, bool ispositive);
-		Term(int exponent, int value);
+		Term(int exponent, mpf_class value);
 		~Term();
-		class	EmptyValue : public std::exception {const char *what() const throw();};
-		void	ParseAndAdd(std::string val, bool ispositive);
-		Term	&operator+=(const Term& rhs);
-		int		getExponent() const;
-		int	getValue() const;
-		void	reverseValue();
+		class		EmptyValue : public std::exception {const char *what() const throw();};
+		void		ParseAndAdd(std::string val, bool ispositive);
+		Term		&operator+=(const Term& rhs);
+		int			getExponent() const;
+		mpf_class	getValue() const;
+		void		reverseValue();
 	private:
-		int	_exponent = -1;
-		int	_value = 0;
+		int			_exponent = -1;
+		mpf_class	_value = 0;
 		Term();
 
 };
